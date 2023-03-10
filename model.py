@@ -132,7 +132,6 @@ if __name__ == '__main__':
     input_size =  features.shape[1]
     total_samples = len(dataset_train)
 
-
     pred_model = PredictionModel(features.shape[1], hidden_size)
 
     criterion = nn.L1Loss()
