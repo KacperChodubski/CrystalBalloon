@@ -16,7 +16,7 @@ class ECMWF_data_collector:
         self.file_path = './balloon/forecast2023-03-07.grib2'
         self.dir_path = './balloon/'
         self.starting_time = 0
-        self.steps = [0, 3, 6, 9, 12, 15, 18]
+        self.steps = [0, 3, 6, 9, 12, 15, 18, 21]
         self.levels = [1000, 925, 850, 700, 500, 300, 250, 200, 50]
         self.params = ["t", "v", "u"]
 

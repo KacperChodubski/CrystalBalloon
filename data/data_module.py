@@ -19,11 +19,14 @@ class BalloonDataset(Dataset):
 
         self.x = xy[:, 3:-3]
 
-        scaler = preprocessing.StandardScaler().fit(self.x )
-        self.x = scaler.transform(self.x )
+        
+
+        #scaler = preprocessing.StandardScaler().fit(self.x )
+        #self.x = scaler.transform(self.x )
 
         self.x = torch.from_numpy(self.x)
         self.y = torch.from_numpy(xy[:, -3:])
+
         self.n_samples = xy.shape[0]
 
     def __getitem__(self, index):

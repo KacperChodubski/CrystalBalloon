@@ -44,8 +44,6 @@ def create_dataset(train = False):
             lon = float(sdf['lon'])
             alt = float(sdf['alt'])
 
-            #vel_h = float(sdf['vel_h'])
-            #vel_v = float(sdf['vel_v'])
             pressure = float(sdf['pressure'])
             mass = float(sdf['mass'])
         except:
@@ -68,8 +66,7 @@ def create_dataset(train = False):
         lon_dif = float(lon_dif)
         alt_dif = float(alt_dif)
 
-        #row = [lat, lon, alt, vel_h, vel_v, pressure, mass, temp, wind_u, wind_v]
-        row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, lat_dif, lon_dif, alt_dif]
+        row = [lat, lon, alt, pressure / 100, mass, temp-273, wind_u, wind_v, lat_dif * 100, lon_dif * 100, alt_dif / 100]
         dataset.append(row)
     
     writer.writerows(dataset)
