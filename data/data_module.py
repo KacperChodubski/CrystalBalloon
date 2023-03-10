@@ -10,7 +10,7 @@ class BalloonDataset(Dataset):
         if train:
             self.path = './balloon/datasets.csv'
         else:
-            self.path = './balloon/datasets_tasting.csv'# TODO
+            self.path = './balloon/datasets_testing.csv'
 
         xy = np.loadtxt(self.path, delimiter=',', dtype=np.float32)
         self.lats = xy[:, 0]

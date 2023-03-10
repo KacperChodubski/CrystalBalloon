@@ -9,6 +9,8 @@ from data.data_module import BalloonDataset
 from torch.utils.data import DataLoader
 import math
 import view
+import data.ecmwf_data_collector as ecwfDC
+import datetime
 
 class PredictionModel(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -24,13 +26,7 @@ class PredictionModel(nn.Module):
         self.act4 = nn.Tanh()
         self.l5 = nn.Linear(hidden_size, hidden_size)
         self.act5 = nn.Tanh()
-        self.l6 = nn.Linear(hidden_size, hidden_size)
-        self.act6 = nn.Tanh()
-        self.l7 = nn.Linear(hidden_size, hidden_size)
-        self.act7 = nn.Tanh()
-        self.l8 = nn.Linear(hidden_size, hidden_size)
-        self.act8 = nn.Tanh()
-        self.l9 = nn.Linear(hidden_size, 3)
+        self.l6 = nn.Linear(hidden_size, 3)
         
 
     def forward(self, x):
@@ -45,21 +41,15 @@ class PredictionModel(nn.Module):
         out = self.l5(out)
         out = self.act5(out)
         out = self.l6(out)
-        out = self.act6(out)
-        out = self.l7(out)
-        out = self.act7(out)
-        out = self.l8(out)
-        out = self.act8(out)
-        out = self.l9(out)
         return out
     
 
 if __name__ == '__main__':
 
-    hidden_size = 128
-    learinging_rate = 0.03
-    batch_size = 50
-    num_epochs = 400
+    hidden_size = 64
+    learinging_rate = 0.001
+    batch_size = 10
+    num_epochs = 800
 
     dataset_train = BalloonDataset(train=True)
     dataloader = DataLoader(dataset=dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
@@ -78,7 +68,7 @@ if __name__ == '__main__':
     pred_model = PredictionModel(features.shape[1], hidden_size)
 
     criterion = nn.SmoothL1Loss() # jeszcze do testowania
-    optimizer = torch.optim.SGD(pred_model.parameters(), lr=learinging_rate)
+    optimizer = torch.optim.ASGD(pred_model.parameters(), lr=learinging_rate)
 
 
     n_iterations = math.ceil(total_samples / batch_size)
@@ -92,32 +82,58 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            if (i+1) % 50 == 0:
+            if (i+1) % 10 == 0:
                 print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/ {n_iterations}, loss = {loss.item():.4f}')
 
     
     with torch.no_grad():
         map_view = view.ViewMap()
-        dataiter = iter(dataloader_test)
-        data = dataiter.next()
-        features, target = data
-        for i in range(0, len(dataloader_test), 300):
-            inputs, labels = dataloader_test.dataset[i]
-            if i == 30:
-                break
-            outputs = pred_model(inputs)
+        ecmwf = ecwfDC.ECMWF_data_collector()
 
+        input_for_pred, _ = dataloader_test.dataset[0]
+        lat_pred = dataset_test.get_lat(0)
+        lon_pred = dataset_test.get_lon(0)
+        alt_pred = dataset_test.get_alt(0)
+        datetime_pred = datetime.datetime.fromisoformat('2023-03-09 23:21:44')
+        lat_target = None
+        lon_target = None
+        alt_target = None
+        predictions_n = 0
+
+        for i in range(len(dataloader_test)):
+            print('prediction: ', predictions_n)
+            predictions_n += 1
+
+            inputs, labels = dataloader_test.dataset[i]
+            prediciton = pred_model(input_for_pred)
             
             lat = dataset_test.get_lat(i)
             lon = dataset_test.get_lon(i)
             alti = dataset_test.get_alt(i)
 
+            lat_pred += prediciton[0].item()
+            lon_pred += prediciton[1].item()
+            alt_pred += prediciton[2].item()
+            pressure_pred = inputs[0].item()
+            mass_pred = inputs[1].item()
+            datetime_pred += datetime.timedelta(seconds=180)
+
+            temp_pred, wind_u_pred, wind_v_pred = ecmwf.get_data(lat_pred, lon_pred, pressure_pred, datetime_pred)
+
+            input_for_pred = torch.tensor([pressure_pred, mass_pred, temp_pred, wind_u_pred, wind_v_pred], dtype=torch.float32)
             
             #print(f'real out {lat + labels[0].item() / 100}, {lon + labels[1].item() / 100} , {alti + labels[2].item() * 1000}')
             #print(f'pred out {lat + outputs[0].item() / 100}, {lon + outputs[1].item() / 100}, {alti + outputs[2].item * 1000}')
-            map_view.add_point(lat + labels[0].item() / 100,lon + labels[1].item() / 100, True)
-            map_view.add_point(lat + outputs[0].item() / 100, lon + outputs[0].item() / 100, False)
 
+            lat_target = lat + labels[0].item()
+            lon_target = lon + labels[1].item()
+            alt_target = alti + labels[2].item()
+
+            map_view.add_point(lat_target, lon_target, True)
+            map_view.add_point(lat_pred, lon_pred, False)
+
+        print(f'Last target pos: {lat_target}, {lon_target}, {alt_target}')
+        print(f'Last predict pos: {lat_pred}, {lon_pred}, {alt_pred}')
         map_view.show_map()
 
     

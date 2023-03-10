@@ -17,9 +17,9 @@ class Sondehub_data_collector:
     def __init__(self):
         self.header_list = ('serial','datetime','alt','lat', 'lon','vel_h', 'vel_v', 'pressure', 'mass')
         self.directory_path = './'
-        self.collect_train_data = False
+        self.collect_train_data = True
         self.dataFrame: pd.DataFrame = None
-        self.data_rate = 1
+        self.data_rate = 180
 
         
         self.test_file_path = './balloon/sondehub_datas_test.csv'
@@ -80,7 +80,7 @@ class Sondehub_data_collector:
 
 if __name__ == '__main__':
     sonde = Sondehub_data_collector()
-    sonde.download_data('U3834741' ,date.datetime.fromisoformat('2023-03-09'))
+    sonde.download_data('S5140565' ,date.datetime.fromisoformat('2023-03-10'))
 
 
 

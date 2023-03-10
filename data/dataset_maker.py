@@ -11,7 +11,7 @@ ecmwf_DC = edc.ECMWF_data_collector()
 
 def create_dataset(train = False):
 
-    steps_forward = 300
+    steps_forward = 1
 
     if not train:
         sondehub_data_frame = sondehub_DC.get_test_dataFrame()
@@ -26,7 +26,7 @@ def create_dataset(train = False):
     f = open(dataset_path, 'w')
     writer = csv.writer(f, delimiter=',')
 
-    for i in range(round((sondehub_data_frame.shape[0]-steps_forward)/ 10)):
+    for i in range(round((sondehub_data_frame.shape[0]-steps_forward))):
 
         percent_done = round(((i/sondehub_data_frame.shape[0]) * 100))
 
@@ -51,15 +51,22 @@ def create_dataset(train = False):
         except:
             continue
 
-        lat_dif = (lat_next - lat)*100
-        lon_dif = (lon_next - lon)*100
-        alt_dif = (alt_next - alt)/1000
+        lat_dif = (lat_next - lat)
+        lon_dif = (lon_next - lon)
+        alt_dif = (alt_next - alt)
 
         if (alt_dif < -50):
             continue
 
         sdf_date = datetime.datetime.fromisoformat(sdf['datetime'].values.item())
         temp, wind_u, wind_v = ecmwf_DC.get_data(lat, lon, pressure, datetime = sdf_date)
+
+        temp = float(temp)
+        wind_u = float(wind_u)
+        wind_v = float(wind_v)
+        lat_dif = float(lat_dif)
+        lon_dif = float(lon_dif)
+        alt_dif = float(alt_dif)
 
         #row = [lat, lon, alt, vel_h, vel_v, pressure, mass, temp, wind_u, wind_v]
         row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, lat_dif, lon_dif, alt_dif]
