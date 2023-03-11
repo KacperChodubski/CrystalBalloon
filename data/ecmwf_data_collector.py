@@ -21,7 +21,7 @@ class ECMWF_data_collector:
         self.params = ["t", "v", "u"]
 
     def _round_pressure(self, pressure):
-        min_val = pressure
+        min_val = 100000
         index = 0
         for i in range(len(self.levels)):
             if abs(self.levels[i] - pressure) < min_val:
@@ -92,5 +92,5 @@ class ECMWF_data_collector:
 if __name__ == '__main__':
     ecmwf = ECMWF_data_collector()
     #ecmwf.download_data('2023-03-07')
-    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 1025, datetime=datetime.datetime.fromisoformat('2023-03-09 07:07:58'))
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-09 07:07:58'))
     print(temp-273)

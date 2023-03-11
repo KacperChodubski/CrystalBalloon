@@ -17,13 +17,11 @@ class Sondehub_data_collector:
     def __init__(self):
         self.header_list = ('serial','datetime','alt','lat', 'lon','vel_h', 'vel_v', 'pressure', 'mass')
         self.directory_path = './'
-        self.collect_train_data = True
         self.dataFrame: pd.DataFrame = None
         self.data_rate = 180
 
         
-        self.test_file_path = './balloon/sondehub_datas_test.csv'
-        self.train_file_path = './balloon/sondehub_datas.csv'
+        self.file_path = './balloon/sondehub_datas.csv'
 
     def _convert_datatime(self, sonde_datetime: str):
         substr = sonde_datetime[:10] + '-' + sonde_datetime[11:19]
@@ -62,25 +60,17 @@ class Sondehub_data_collector:
             print("Couldnt download data.")
             return None
         
-    def get_train_dataFrame(self):
+    def get_dataFrame(self):
         try:
-            self.dataFrame = pd.read_csv(self.train_file_path)
+            self.dataFrame = pd.read_csv(self.file_path)
             return self.dataFrame
         except:
             return None
-        
-    def get_test_dataFrame(self):
-        try:
-            self.dataFrame = pd.read_csv(self.test_file_path)
-            return self.dataFrame
-        except:
-            return None
-        
 
 
 if __name__ == '__main__':
     sonde = Sondehub_data_collector()
-    sonde.download_data('U3450955' ,date.datetime.fromisoformat('2023-03-10'))
+    sonde.download_data('T2730436' ,date.datetime.fromisoformat('2023-03-10'))
 
 
 

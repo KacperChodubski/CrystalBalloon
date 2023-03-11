@@ -6,11 +6,8 @@ from sklearn import preprocessing
 
 
 class BalloonDataset(Dataset):
-    def __init__(self, train = False):
-        if train:
-            self.path = './balloon/datasets.csv'
-        else:
-            self.path = './balloon/datasets_testing.csv'
+    def __init__(self):
+        self.path = './balloon/datasets.csv'
 
         xy = np.loadtxt(self.path, delimiter=',', dtype=np.float32)
         self.lats = xy[:, 0]
@@ -21,8 +18,8 @@ class BalloonDataset(Dataset):
 
         
 
-        #scaler = preprocessing.StandardScaler().fit(self.x )
-        #self.x = scaler.transform(self.x )
+        scaler = preprocessing.StandardScaler().fit(self.x )
+        self.x = scaler.transform(self.x )
 
         self.x = torch.from_numpy(self.x)
         self.y = torch.from_numpy(xy[:, -3:])

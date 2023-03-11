@@ -20,33 +20,41 @@ class PredictionModel(nn.Module):
         # lat layers
         self.a1 = nn.Tanh()
         self.l1_1 = nn.Linear(input_size, hidden_size)
-        self.l1_2 = nn.Linear(hidden_size, 1)
+        self.l1_2 = nn.Linear(hidden_size, hidden_size)
+        self.l1_3 = nn.Linear(hidden_size, 1)
 
         # lon layers
         self.a2 = nn.Tanh()
         self.l2_1 = nn.Linear(input_size, hidden_size)
-        self.l2_2 = nn.Linear(hidden_size, 1)
+        self.l2_2 = nn.Linear(hidden_size, hidden_size)
+        self.l2_3 = nn.Linear(hidden_size, 1)
 
         # alt layers
         self.a3 = nn.Tanh()
         self.l3_1 = nn.Linear(input_size, hidden_size)
-        self.l3_2 = nn.Linear(hidden_size, 1)
+        self.l3_2 = nn.Linear(hidden_size, hidden_size)
+        self.l3_3 = nn.Linear(hidden_size, 1)
 
         
 
     def forward(self, x):
 
         out1 = self.l1_1(x)
-        #out1 = self.a1(out1)
+        out1 = self.a1(out1)
         out1 = self.l1_2(out1)
+        out1 = self.a1(out1)
+        out1 = self.l1_3(out1)
 
         out2 = self.l2_1(x)
-        #out2 = self.a2(out2)
+        out2 = self.a2(out2)
         out2 = self.l2_2(out2)
+        out2 = self.a2(out2)
+        out2 = self.l2_3(out2)
 
         out3 = self.l3_1(x)
-        #out3 = self.a3(out3)
+        out3 = self.a3(out3)
         out3 = self.l3_2(out3)
+        out3 = self.a3(out3)
 
         return {'lat': out1, 'lon': out2, 'alt': out3}
     
@@ -74,7 +82,7 @@ class PredictionModel(nn.Module):
 
             def closure_lon():
 
-                optimizers[1].zero_grad()
+                optimizers[0].zero_grad()
 
                 y_pred = model(x_)
 
@@ -89,7 +97,7 @@ class PredictionModel(nn.Module):
 
             def closure_alt():
 
-                optimizers[2].zero_grad()
+                optimizers[0].zero_grad()
 
                 y_pred = model(x_)
 
@@ -114,90 +122,83 @@ class PredictionModel(nn.Module):
 
 if __name__ == '__main__':
 
-    hidden_size = 128
-    learinging_rate = 0.003
-    batch_size = 20
-    num_epochs = 1000
+    hidden_size = 32
+    learinging_rate = 0.03
+    batch_size = 1
+    num_epochs = 300
 
-    dataset_train = BalloonDataset(train=True)
-    dataloader = DataLoader(dataset=dataset_train, batch_size=batch_size, shuffle=False, num_workers=0)
+    dataset = BalloonDataset()
+    
+    train_size = round(len(dataset) * 0.8)
+    test_size = len(dataset) - train_size
 
-    dataset_test = BalloonDataset(train=False)
-    dataloader_test = DataLoader(dataset=dataset_test, batch_size=1, shuffle=False, num_workers=0)
+    train_set, test_set = torch.utils.data.random_split(dataset, [train_size, test_size])
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
-    dataiter = iter(dataloader)
+    dataiter = iter(train_loader)
     data = dataiter.next()
     features, target = data
 
     input_size =  features.shape[1]
-    total_samples = len(dataset_train)
+    num_training_steps = len(train_loader) * num_epochs
 
     pred_model = PredictionModel(features.shape[1], hidden_size)
 
-    criterion = nn.L1Loss()
+    criterion = nn.MSELoss()
     optimizer1 = torch.optim.SGD(pred_model.parameters(), lr=learinging_rate)
     optimizer2 = torch.optim.SGD(pred_model.parameters(), lr=learinging_rate)
     optimizer3 = torch.optim.SGD(pred_model.parameters(), lr=learinging_rate)
 
     for epoch in range(num_epochs):
         running_loss = PredictionModel.train_step(model=pred_model,
-                              data=dataloader,
+                              data=train_loader,
                               optimizers=[optimizer1, optimizer2, optimizer3],
                               criterion=criterion)
         print(f"Epoch: {epoch + 1:02}/{num_epochs} Loss: {running_loss:.5e}")
 
     
-    with torch.no_grad():
-        map_view = view.ViewMap()
-        ecmwf = ecwfDC.ECMWF_data_collector()
+    # with torch.no_grad():
+    #     map_view = view.ViewMap()
+    #     ecmwf = ecwfDC.ECMWF_data_collector()
 
-        input_for_pred, _ = dataloader.dataset[0]
-        lat_pred = dataset_test.get_lat(0)
-        lon_pred = dataset_test.get_lon(0)
-        alt_pred = dataset_test.get_alt(0)
-        datetime_pred = datetime.datetime.fromisoformat('2023-03-09 10:51:44')
-        lat_target = None
-        lon_target = None
-        alt_target = None
-        predictions_n = 0
+    #     input_for_pred, _ = test_loader.dataset[0]
+        
+    #     lat_target = None
+    #     lon_target = None
+    #     alt_target = None
+    #     predictions_n = 0
 
-        for i in range(30):
-            print('prediction: ', predictions_n)
-            predictions_n += 1
+    #     lat_pred = test_set[0]
+    #     lon_pred = test_set[0]
+    #     alt_pred = test_set[0]
 
-            inputs, labels = dataloader.dataset[i]
-            prediciton = pred_model(input_for_pred)
+    #     for i in range(35):
+    #         print('prediction: ', predictions_n)
+    #         predictions_n += 1
+
+    #         inputs, labels = test_loader.dataset[i]
+    #         prediciton = pred_model(input_for_pred)
             
-            lat = dataset_test.get_lat(i)
-            lon = dataset_test.get_lon(i)
-            alti = dataset_test.get_alt(i)
+    #         lat = test_set.get_lat(i)
+    #         lon = test_set.get_lon(i)
+    #         alti = test_set.get_alt(i)
 
-            lat_pred += prediciton['lat'].item() / 100
-            lon_pred += prediciton['lon'].item() / 100
-            alt_pred += prediciton['alt'].item() * 100
-            pressure_pred = inputs[0].item() * 100
-            mass_pred = inputs[1].item()
-            datetime_pred += datetime.timedelta(seconds=180)
+    #         lat_pred += prediciton['lat'].item()
+    #         lon_pred += prediciton['lon'].item()
+    #         alt_pred += prediciton['alt'].item()
 
-            temp_pred, wind_u_pred, wind_v_pred = ecmwf.get_data(lat_pred, lon_pred, pressure_pred, datetime_pred)
+            
+    #         input_for_pred = torch.tensor(inputs, dtype=torch.float32)
 
-            temp_pred -= 273
-            pressure_pred /= 100
+    #         lat_target = lat + labels[0].item()
+    #         lon_target = lon + labels[1].item()
+    #         alt_target = alti + labels[2].item()
 
-            input_for_pred = torch.tensor([pressure_pred , mass_pred, temp_pred, wind_u_pred, wind_v_pred], dtype=torch.float32)
-
-            lat_target = lat + labels[0].item() / 100
-            lon_target = lon + labels[1].item() / 100
-            alt_target = alti + labels[2].item() * 100
-
-            map_view.add_point(lat_pred, lon_pred, False)
-            map_view.add_point(lat_target, lon_target, True)
-
-            print(f'Wind: {wind_u_pred}, {wind_v_pred}')
-            print(f'Last target pos: {lat_target}, {lon_target}, {alt_target}')
-            print(f'Last predict pos: {lat_pred}, {lon_pred}, {alt_pred}')
+    #         map_view.add_point(lat_pred, lon_pred, False)
+    #         map_view.add_point(lat_target, lon_target, True)
 
         
-        map_view.show_map()
+    #     map_view.show_map()
 
     

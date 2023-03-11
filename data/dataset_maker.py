@@ -9,24 +9,23 @@ import math
 sondehub_DC = sdc.Sondehub_data_collector()
 ecmwf_DC = edc.ECMWF_data_collector()
 
-def create_dataset(train = False):
+def create_dataset():
 
     steps_forward = 1
+    start = 1000
+    finish = 1300
 
-    if not train:
-        sondehub_data_frame = sondehub_DC.get_test_dataFrame()
-        dataset_path = './balloon/datasets_testing.csv'
-    else:
-        sondehub_data_frame = sondehub_DC.get_train_dataFrame()
-        dataset_path = './balloon/datasets.csv'
+    
+    sondehub_data_frame = sondehub_DC.get_dataFrame()
 
+    finish = min(finish, sondehub_data_frame.shape[0]-steps_forward)
 
-    dataset = []
+    dataset_path = './balloon/datasets.csv'
 
-    f = open(dataset_path, 'w')
+    f = open(dataset_path, 'a')
     writer = csv.writer(f, delimiter=',')
 
-    for i in range(round((sondehub_data_frame.shape[0]-steps_forward))):
+    for i in range(start, finish, 1):
 
         percent_done = round(((i/sondehub_data_frame.shape[0]) * 100))
 
@@ -66,10 +65,8 @@ def create_dataset(train = False):
         lon_dif = float(lon_dif)
         alt_dif = float(alt_dif)
 
-        row = [lat, lon, alt, pressure / 100, mass, temp-273, wind_u, wind_v, lat_dif * 100, lon_dif * 100, alt_dif / 100]
-        dataset.append(row)
-    
-    writer.writerows(dataset)
+        row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, lat_dif * 100, lon_dif * 100, alt_dif / 100]
+        writer.writerow(row)
     
 
 
@@ -77,6 +74,5 @@ def create_dataset(train = False):
 
 
 if __name__ == '__main__':
-    create_dataset(train=True)
-    create_dataset(train=False)
+    create_dataset()
         
