@@ -15,6 +15,9 @@ class BalloonDataset(Dataset):
         self.alts = xy[:, 2]
 
         self.x = xy[:, 3:-3]
+
+        #self.x = [(element - np.mean(self.x)) / np.std(self.x) for element in self.x]
+        #self.x = torch.tensor(self.x)
         
         self.x = torch.from_numpy(self.x)
         self.y = torch.from_numpy(xy[:, -3:])

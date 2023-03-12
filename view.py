@@ -24,7 +24,7 @@ class ViewMap:
                 ff_lon = self.real_points[i][1]
                 ff_lat = self.real_points[i][0]
 
-                self.ax.plot([to_lon, ff_lon], [to_lat, ff_lat], c='b', lw=2,
+                self.ax.plot([to_lon, ff_lon], [to_lat, ff_lat], c='b', lw=1,
                 transform=ccrs.PlateCarree())
 
         else:
@@ -36,7 +36,7 @@ class ViewMap:
                 ff_lon = self.pred_points[i][1]
                 ff_lat = self.pred_points[i][0]
 
-                self.ax.plot([to_lon, ff_lon], [to_lat, ff_lat], c='r', lw=2,
+                self.ax.plot([to_lon, ff_lon], [to_lat, ff_lat], c='r', lw=1,
                 transform=ccrs.PlateCarree())
 
     def show_map(self):

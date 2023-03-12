@@ -13,8 +13,8 @@ class PredictionModel(nn.Module):
     def __init__(self, dataset):
 
         # hyperparameters
-        hidden_size = 16
-        learinging_rate = 1e-2
+        hidden_size = 32
+        learinging_rate = 1e-3
         batch_size = 16
 
         # Loading data
@@ -56,7 +56,7 @@ class PredictionModel(nn.Module):
         # Setting up optimizer and criterion
 
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.SGD(self.parameters(), lr=learinging_rate, momentum=0.9)
+        self.optimizer = torch.optim.SGD(self.parameters(), lr=learinging_rate, momentum=0.99)
 
         
 
@@ -146,9 +146,6 @@ class PredictionModel(nn.Module):
 
             input_for_pred, _ = self.test_loader.dataset[0]
             
-            lat_target = None
-            lon_target = None
-            alt_target = None
             predictions_n = 0
 
             lat_start = 54.70527
@@ -159,30 +156,32 @@ class PredictionModel(nn.Module):
             lon_pred = lon_start
             alt_pred = alt_start
 
-            for i in range(len(self.test_loader)):
+            lat_target = lat_start
+            lon_target = lon_start
+            alt_target = alt_start
+
+            for i in range(25):
                 print('prediction: ', predictions_n)
                 predictions_n += 1
 
                 inputs, labels = self.test_loader.dataset[i]
                 prediciton = pred_model(input_for_pred)
+                
+                input_for_pred = torch.tensor(inputs, dtype=torch.float32)        
+
+                map_view.add_point(lat_pred, lon_pred, False)
+                map_view.add_point(lat_target, lon_target, True)
 
                 lat_pred += prediciton['lat'].item() / 100
                 lon_pred += prediciton['lon'].item() / 100
                 alt_pred += prediciton['alt'].item() * 1000
 
-                
-                input_for_pred = torch.tensor(inputs, dtype=torch.float32)
+                lat_target += labels[0].item() / 100
+                lon_target += labels[1].item() / 100 
+                alt_target += labels[2].item() * 1000
 
-                lat_target = lat_start
-                lon_target = lon_start
-                alt_target = alt_start
-
-                map_view.add_point(lat_pred, lon_pred, False)
-                map_view.add_point(lat_target, lon_target, True)
-
-                lat_start += labels[0].item() / 100
-                lon_start += labels[1].item() / 100 
-                alt_start += labels[2].item() * 1000
+                print(f'Target pos {lat_target}, {lon_target}, {alt_target}')
+                print(f'Predic pos {lat_pred}, {lon_pred}, {alt_pred}')
 
             
             map_view.show_map()
@@ -195,7 +194,7 @@ if __name__ == '__main__':
     dataset = BalloonDataset()
 
     pred_model = PredictionModel(dataset=dataset)
-    num_epochs = 50
+    num_epochs = 300
     pred_model.train(num_epochs)
     pred_model.validation()
 

@@ -63,7 +63,7 @@ class Sondehub_data_collector:
 
 if __name__ == '__main__':
     sonde = Sondehub_data_collector()
-    sonde.download_data('204-2-00166' ,date.datetime.fromisoformat('2023-03-12'))
+    sonde.download_data('U4044863' ,date.datetime.fromisoformat('2023-03-12'))
 
 
 
