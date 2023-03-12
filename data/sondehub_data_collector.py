@@ -18,7 +18,7 @@ class Sondehub_data_collector:
         self.header_list = ('serial','datetime','alt','lat', 'lon','vel_h', 'vel_v', 'pressure', 'mass')
         self.directory_path = './'
         self.dataFrame: pd.DataFrame = None
-        self.data_rate = 180
+        self.data_rate = 60 # this
 
         
         self.file_path = './balloon/sondehub_datas.csv'
@@ -46,16 +46,9 @@ class Sondehub_data_collector:
             self.dataFrame = self.dataFrame.loc[::self.data_rate, :]
             self.dataFrame = self.dataFrame[self.dataFrame.pressure.notnull()]
 
-            file_path = None
-
-            if self.collect_train_data:
-                file_path = self.train_file_path
-            else:
-                file_path = self.test_file_path
-
-            self.dataFrame.to_csv(file_path, mode='a', index=False, header=False)
+            self.dataFrame.to_csv(self.file_path, mode='a', index=False, header=False)
             print('Balloon ' + serial_n + ' was dwonloaded')
-            return file_path
+            return self.file_path
         else:
             print("Couldnt download data.")
             return None
@@ -70,7 +63,7 @@ class Sondehub_data_collector:
 
 if __name__ == '__main__':
     sonde = Sondehub_data_collector()
-    sonde.download_data('T2730436' ,date.datetime.fromisoformat('2023-03-10'))
+    sonde.download_data('204-2-00166' ,date.datetime.fromisoformat('2023-03-12'))
 
 
 

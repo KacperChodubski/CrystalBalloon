@@ -1,204 +1,202 @@
-from cProfile import label
-from curses.ascii import alt
-from tkinter import Variable
-from tkinter.tix import Tree
-from turtle import forward
-from numpy import dtype
 import torch
 import torch.nn as nn
 from data.data_module import BalloonDataset
 from torch.utils.data import DataLoader
-import math
+import torchvision.transforms as transforms
 import view
 import data.ecmwf_data_collector as ecwfDC
 import datetime
+#from torch.utils.tensorboard import SummaryWriter
+import sys
 
 class PredictionModel(nn.Module):
-    def __init__(self, input_size, hidden_size):
+    def __init__(self, dataset):
+
+        # hyperparameters
+        hidden_size = 16
+        learinging_rate = 1e-2
+        batch_size = 16
+
+        # Loading data
+    
+        train_size = round(len(dataset) * 0.8)
+        test_size = len(dataset) - train_size
+
+        train_set, self.test_set = torch.utils.data.random_split(dataset, [train_size, test_size])
+        self.train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+        self.test_loader = DataLoader(self.test_set, batch_size=1, shuffle=False)
+
+        # Setting up input size
+
+        dataiter = iter(self.train_loader)
+        data = dataiter.next()
+        features, _ = data
+
+        input_size =  features.shape[1]
+
         super(PredictionModel, self).__init__()
 
+        #self.writer = SummaryWriter("runs/logs")
+
         # lat layers
-        self.a1 = nn.Tanh()
         self.l1_1 = nn.Linear(input_size, hidden_size)
         self.l1_2 = nn.Linear(hidden_size, hidden_size)
         self.l1_3 = nn.Linear(hidden_size, 1)
 
         # lon layers
-        self.a2 = nn.Tanh()
         self.l2_1 = nn.Linear(input_size, hidden_size)
         self.l2_2 = nn.Linear(hidden_size, hidden_size)
         self.l2_3 = nn.Linear(hidden_size, 1)
 
         # alt layers
-        self.a3 = nn.Tanh()
         self.l3_1 = nn.Linear(input_size, hidden_size)
         self.l3_2 = nn.Linear(hidden_size, hidden_size)
         self.l3_3 = nn.Linear(hidden_size, 1)
+
+        # Setting up optimizer and criterion
+
+        self.criterion = nn.MSELoss()
+        self.optimizer = torch.optim.SGD(self.parameters(), lr=learinging_rate, momentum=0.9)
 
         
 
     def forward(self, x):
 
         out1 = self.l1_1(x)
-        out1 = self.a1(out1)
         out1 = self.l1_2(out1)
-        out1 = self.a1(out1)
         out1 = self.l1_3(out1)
 
         out2 = self.l2_1(x)
-        out2 = self.a2(out2)
         out2 = self.l2_2(out2)
-        out2 = self.a2(out2)
         out2 = self.l2_3(out2)
 
         out3 = self.l3_1(x)
-        out3 = self.a3(out3)
         out3 = self.l3_2(out3)
-        out3 = self.a3(out3)
+        out3 = self.l3_3(out3)
 
         return {'lat': out1, 'lon': out2, 'alt': out3}
     
-    def train_step(model, data, optimizers, criterion):
+    def train_step(self):
         running_loss = 0.0
 
-        for i, (inputs, labels) in enumerate(data):
-            x_ = torch.autograd.Variable(inputs, requires_grad=True)
-            y_ = torch.autograd.Variable(labels)
-
+        for i, (inputs, labels) in enumerate(self.train_loader):
 
             def closure_lat():
+                self.optimizer.zero_grad()
 
-                optimizers[0].zero_grad()
-
-                y_pred = model(x_)
-
+                y_pred = self(inputs)
                 lat_pred = y_pred['lat']
 
-                loss1 = criterion(lat_pred, y_[0][0])
+                target = torch.FloatTensor(labels[: , 0])
+                target = torch.unsqueeze(target, 1)
 
+                loss1 = self.criterion(lat_pred, target)
                 loss1.backward()
 
                 return loss1
 
             def closure_lon():
+                self.optimizer.zero_grad()
 
-                optimizers[0].zero_grad()
-
-                y_pred = model(x_)
-
+                y_pred = self(inputs)
                 lon_pred = y_pred['lon']
 
-                loss2 = criterion(lon_pred, y_[0][1])
+                target = torch.FloatTensor(labels[: , 1])
+                target = torch.unsqueeze(target, 1)
 
+                loss2 = self.criterion(lon_pred, target)
                 loss2.backward()
 
                 return loss2
-                
 
             def closure_alt():
+                self.optimizer.zero_grad()
 
-                optimizers[0].zero_grad()
-
-                y_pred = model(x_)
-
+                y_pred = self(inputs)
                 alt_pred = y_pred['alt']
 
-                loss3 = criterion(alt_pred, y_[0][2])
+                target = torch.FloatTensor(labels[: , 2])
+                target = torch.unsqueeze(target, 1)
 
+                loss3 = self.criterion(alt_pred, target)
                 loss3.backward()
-
                 return loss3
+
+                
             
-            optimizers[0].step(closure_lat)
-            optimizers[1].step(closure_lon)
-            optimizers[2].step(closure_alt)
+            self.optimizer.step(closure_lat)
+            self.optimizer.step(closure_lon)
+            self.optimizer.step(closure_alt)
 
             loss = closure_lat() + closure_lon() + closure_alt()
             running_loss += loss.item()
 
         return running_loss
+    
+    def train(self, num_epochs):
+        total_steps = len(self.train_loader) * num_epochs
+        for epoch in range(num_epochs):
+            running_loss = self.train_step()
+            print(f"Epoch: {epoch + 1:02}/{num_epochs} Loss: {running_loss:.5e}")
+
+    def validation(self):
+        with torch.no_grad():
+            map_view = view.ViewMap()
+            ecmwf = ecwfDC.ECMWF_data_collector()
+
+            input_for_pred, _ = self.test_loader.dataset[0]
+            
+            lat_target = None
+            lon_target = None
+            alt_target = None
+            predictions_n = 0
+
+            lat_start = 54.70527
+            lon_start = 17.65194
+            alt_start = 2974.15
+
+            lat_pred = lat_start
+            lon_pred = lon_start
+            alt_pred = alt_start
+
+            for i in range(len(self.test_loader)):
+                print('prediction: ', predictions_n)
+                predictions_n += 1
+
+                inputs, labels = self.test_loader.dataset[i]
+                prediciton = pred_model(input_for_pred)
+
+                lat_pred += prediciton['lat'].item() / 100
+                lon_pred += prediciton['lon'].item() / 100
+                alt_pred += prediciton['alt'].item() * 1000
+
+                
+                input_for_pred = torch.tensor(inputs, dtype=torch.float32)
+
+                lat_target = lat_start
+                lon_target = lon_start
+                alt_target = alt_start
+
+                map_view.add_point(lat_pred, lon_pred, False)
+                map_view.add_point(lat_target, lon_target, True)
+
+                lat_start += labels[0].item() / 100
+                lon_start += labels[1].item() / 100 
+                alt_start += labels[2].item() * 1000
+
+            
+            map_view.show_map()
+
 
     
 
 if __name__ == '__main__':
 
-    hidden_size = 32
-    learinging_rate = 0.03
-    batch_size = 1
-    num_epochs = 300
-
     dataset = BalloonDataset()
-    
-    train_size = round(len(dataset) * 0.8)
-    test_size = len(dataset) - train_size
 
-    train_set, test_set = torch.utils.data.random_split(dataset, [train_size, test_size])
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
-
-    dataiter = iter(train_loader)
-    data = dataiter.next()
-    features, target = data
-
-    input_size =  features.shape[1]
-    num_training_steps = len(train_loader) * num_epochs
-
-    pred_model = PredictionModel(features.shape[1], hidden_size)
-
-    criterion = nn.MSELoss()
-    optimizer1 = torch.optim.SGD(pred_model.parameters(), lr=learinging_rate)
-    optimizer2 = torch.optim.SGD(pred_model.parameters(), lr=learinging_rate)
-    optimizer3 = torch.optim.SGD(pred_model.parameters(), lr=learinging_rate)
-
-    for epoch in range(num_epochs):
-        running_loss = PredictionModel.train_step(model=pred_model,
-                              data=train_loader,
-                              optimizers=[optimizer1, optimizer2, optimizer3],
-                              criterion=criterion)
-        print(f"Epoch: {epoch + 1:02}/{num_epochs} Loss: {running_loss:.5e}")
-
-    
-    # with torch.no_grad():
-    #     map_view = view.ViewMap()
-    #     ecmwf = ecwfDC.ECMWF_data_collector()
-
-    #     input_for_pred, _ = test_loader.dataset[0]
-        
-    #     lat_target = None
-    #     lon_target = None
-    #     alt_target = None
-    #     predictions_n = 0
-
-    #     lat_pred = test_set[0]
-    #     lon_pred = test_set[0]
-    #     alt_pred = test_set[0]
-
-    #     for i in range(35):
-    #         print('prediction: ', predictions_n)
-    #         predictions_n += 1
-
-    #         inputs, labels = test_loader.dataset[i]
-    #         prediciton = pred_model(input_for_pred)
-            
-    #         lat = test_set.get_lat(i)
-    #         lon = test_set.get_lon(i)
-    #         alti = test_set.get_alt(i)
-
-    #         lat_pred += prediciton['lat'].item()
-    #         lon_pred += prediciton['lon'].item()
-    #         alt_pred += prediciton['alt'].item()
-
-            
-    #         input_for_pred = torch.tensor(inputs, dtype=torch.float32)
-
-    #         lat_target = lat + labels[0].item()
-    #         lon_target = lon + labels[1].item()
-    #         alt_target = alti + labels[2].item()
-
-    #         map_view.add_point(lat_pred, lon_pred, False)
-    #         map_view.add_point(lat_target, lon_target, True)
-
-        
-    #     map_view.show_map()
+    pred_model = PredictionModel(dataset=dataset)
+    num_epochs = 50
+    pred_model.train(num_epochs)
+    pred_model.validation()
 
     

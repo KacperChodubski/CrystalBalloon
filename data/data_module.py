@@ -15,14 +15,11 @@ class BalloonDataset(Dataset):
         self.alts = xy[:, 2]
 
         self.x = xy[:, 3:-3]
-
         
-
-        scaler = preprocessing.StandardScaler().fit(self.x )
-        self.x = scaler.transform(self.x )
-
         self.x = torch.from_numpy(self.x)
         self.y = torch.from_numpy(xy[:, -3:])
+
+        torch.nn.functional.normalize(self.x, out=self.x)
 
         self.n_samples = xy.shape[0]
 

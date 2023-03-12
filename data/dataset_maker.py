@@ -13,7 +13,7 @@ def create_dataset():
 
     steps_forward = 1
     start = 1000
-    finish = 1300
+    finish = 1500
 
     
     sondehub_data_frame = sondehub_DC.get_dataFrame()
@@ -33,6 +33,8 @@ def create_dataset():
         print(f' {percent_done}% done','#' * math.floor(percent_done/5), end="\r")
         sdf = sondehub_data_frame.iloc[[i]]
         sdf_next = sondehub_data_frame.iloc[[i+steps_forward]]
+        if (sdf['serial'].values[0] != sdf_next['serial'].values[0]):
+            continue
 
         try:
             lat_next = float(sdf_next['lat'])
@@ -46,6 +48,7 @@ def create_dataset():
             pressure = float(sdf['pressure'])
             mass = float(sdf['mass'])
         except:
+            print('Bad data')
             continue
 
         lat_dif = (lat_next - lat)
@@ -65,7 +68,7 @@ def create_dataset():
         lon_dif = float(lon_dif)
         alt_dif = float(alt_dif)
 
-        row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, lat_dif * 100, lon_dif * 100, alt_dif / 100]
+        row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, lat_dif * 100, lon_dif * 100, alt_dif / 1000]
         writer.writerow(row)
     
 
