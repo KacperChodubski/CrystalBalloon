@@ -7,18 +7,19 @@ from ecmwf.opendata import Client
 import pandas as pd
 import pygrib
 import math
-from os import listdir
+import os
 from os.path import isfile
 
 class ECMWF_data_collector:
     def __init__(self):
         self.client = Client(source="ecmwf")
-        self.file_path = './balloon/forecast2023-03-07.grib2'
-        self.dir_path = './balloon/'
+        cur_path = os.path.dirname(__file__)
+        self.file_path = os.path.join(cur_path, 'balloon\\forecast2023-03-07.grib2')
+        self.dir_path = os.path.join(cur_path, 'balloon')
         self.starting_time = 0
         self.steps = [0, 3, 6, 9, 12, 15, 18, 21]
         self.levels = [1000, 925, 850, 700, 500, 300, 250, 200, 50]
-        self.params = ["t", "v", "u"]
+        self.params = ["t", "v", "u", 'msl',]
 
     def _round_pressure(self, pressure):
         min_val = 100000
@@ -41,7 +42,7 @@ class ECMWF_data_collector:
         return self.steps[index]
 
     def download_data(self, date: datetime.date):
-        self.file_path = './balloon/forecast'+str(date)+'.grib2'
+        self.file_path = os.path.join(self.dir_path, 'forecast'+ str(date)+'.grib2')
         self.request = {
             'stream':   'oper',
             'date':     str(date),
@@ -49,7 +50,7 @@ class ECMWF_data_collector:
             'type':     "fc",
             'step':     self.steps,
             'param':    self.params,
-            'levelist': self.levels,
+            #'levelist': self.levels,
         }
         res = self.client.retrieve(request=self.request, target=self.file_path)
         return self.file_path
@@ -57,8 +58,32 @@ class ECMWF_data_collector:
     def set_data_file(self, path: String):
         self.file_path = path
 
+    def _get_lon_index(self, lon):
+        return math.ceil((lon + 180) / 0.4)
+
+    def _get_lat_index(self, lat):
+        return math.ceil((90 - lat) / 0.4)
+
+    def get_msl(self, lat, lon, datetime: datetime.datetime):
+        file_forecast_balloon = os.path.join(self.dir_path, 'forecast'+ str(datetime.date())+'.grib2')
+        if not isfile((file_forecast_balloon)):
+            self.download_data(datetime.date())
+        grbs = pygrib.open(file_forecast_balloon)
+        step_of_balloon = self._step_of_datetime(datetime)
+
+        grbs.seek(0)
+
+        index_lat = self._get_lat_index(lat)
+        index_lon = self._get_lon_index(lon)
+
+        for grb in grbs:
+            if grb.shortName == "msl" and grb.step == step_of_balloon:
+                mls = grb.values[index_lat][index_lon]/ 100
+
+        return mls
+
     def get_data(self, lat, lon, pressure, datetime: datetime.datetime):
-        file_forecast_balloon = self.dir_path+'forecast'+ str(datetime.date())+'.grib2'
+        file_forecast_balloon = os.path.join(self.dir_path, 'forecast'+ str(datetime.date())+'.grib2')
         if not isfile((file_forecast_balloon)):
             self.download_data(datetime.date())
         grbs = pygrib.open(file_forecast_balloon)
@@ -66,14 +91,14 @@ class ECMWF_data_collector:
         pressure = self._round_pressure(pressure)
         step_of_balloon = self._step_of_datetime(datetime)
 
-        index_lat = math.ceil((90 - lat) / 0.4)
-        index_lon = math.ceil((lon + 180) / 0.4)
-
+        index_lat = self._get_lat_index(lat)
+        index_lon = self._get_lon_index(lon)
         grbs.seek(0)
 
         temp: float = None
         wind_u: float = None
         wind_v: float = None
+        msl: float = None
 
         for grb in grbs:
             if grb.level == pressure and grb.step == step_of_balloon:
@@ -91,6 +116,5 @@ class ECMWF_data_collector:
 
 if __name__ == '__main__':
     ecmwf = ECMWF_data_collector()
-    #ecmwf.download_data('2023-03-07')
-    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-09 07:07:58'))
-    print(temp-273)
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-14 07:07:58'))
+    #print(temp-273)

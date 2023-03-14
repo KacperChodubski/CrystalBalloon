@@ -3,11 +3,14 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import math
 from sklearn import preprocessing
+import os
 
 
 class BalloonDataset(Dataset):
     def __init__(self):
-        self.path = './balloon/datasets.csv'
+        cur_path = os.path.dirname(__file__)
+        self.path = os.path.join(cur_path, '..\\data\\balloon')
+        self.path = '/Users/mojskarb/stardust/data/balloon/datasets.csv'
 
         xy = np.loadtxt(self.path, delimiter=',', dtype=np.float32)
         self.lats = xy[:, 0]

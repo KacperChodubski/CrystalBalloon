@@ -9,6 +9,7 @@ import pandas as pd
 import sondehub
 import datetime as date
 from dateutil import parser
+import os
 
 
 
@@ -16,12 +17,12 @@ from dateutil import parser
 class Sondehub_data_collector:
     def __init__(self):
         self.header_list = ('serial','datetime','alt','lat', 'lon','vel_h', 'vel_v', 'pressure', 'mass')
-        self.directory_path = './'
+        self.cur_dir = os.path.dirname(__file__)
         self.dataFrame: pd.DataFrame = None
-        self.data_rate = 60 # this
+        self.data_rate = 60
 
         
-        self.file_path = './balloon/sondehub_datas.csv'
+        self.file_path = os.path.join(self.cur_dir, '..\\balloon\\sondehub_datas.csv')
 
     def _convert_datatime(self, sonde_datetime: str):
         substr = sonde_datetime[:10] + '-' + sonde_datetime[11:19]
@@ -63,14 +64,4 @@ class Sondehub_data_collector:
 
 if __name__ == '__main__':
     sonde = Sondehub_data_collector()
-    sonde.download_data('U4044863' ,date.datetime.fromisoformat('2023-03-12'))
-
-
-
-
-
-
-
-
-
-
+    sonde.download_data('U2310509' ,date.datetime.fromisoformat('2023-03-13'))

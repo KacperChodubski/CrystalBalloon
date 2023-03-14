@@ -5,6 +5,7 @@ import pandas as pd
 import csv
 import datetime
 import math
+import os
 
 sondehub_DC = sdc.Sondehub_data_collector()
 ecmwf_DC = edc.ECMWF_data_collector()
@@ -20,7 +21,7 @@ def create_dataset():
 
     finish = min(finish, sondehub_data_frame.shape[0]-steps_forward)
 
-    dataset_path = './balloon/datasets.csv'
+    dataset_path = os.path.join(os.path.pardir(__file__) ,'..\\balloon\\datasets.csv')
 
     f = open(dataset_path, 'a')
     writer = csv.writer(f, delimiter=',')
