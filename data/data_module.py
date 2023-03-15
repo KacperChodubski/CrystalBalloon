@@ -7,10 +7,11 @@ import os
 
 
 class BalloonDataset(Dataset):
-    def __init__(self):
+    def __init__(self, transform=None):
         cur_path = os.path.dirname(__file__)
-        self.path = os.path.join(cur_path, '..\\data\\balloon')
-        self.path = '/Users/mojskarb/stardust/data/balloon/datasets.csv'
+        self.path = os.path.join(cur_path, 'balloon/datasets.csv')
+        #self.path = '/Users/mojskarb/stardust/data/balloon/datasets.csv'
+        self.transform = transform
 
         xy = np.loadtxt(self.path, delimiter=',', dtype=np.float32)
         self.lats = xy[:, 0]
@@ -18,18 +19,15 @@ class BalloonDataset(Dataset):
         self.alts = xy[:, 2]
 
         self.x = xy[:, 3:-3]
-
-        #self.x = [(element - np.mean(self.x)) / np.std(self.x) for element in self.x]
-        #self.x = torch.tensor(self.x)
         
         self.x = torch.from_numpy(self.x)
         self.y = torch.from_numpy(xy[:, -3:])
 
-        torch.nn.functional.normalize(self.x, out=self.x)
-
         self.n_samples = xy.shape[0]
 
     def __getitem__(self, index):
+        if self.transform:
+            self.x = self.transform(self.x)
         return self.x[index], self.y[index]
 
     def __len__(self):

@@ -21,7 +21,7 @@ def create_dataset():
 
     finish = min(finish, sondehub_data_frame.shape[0]-steps_forward)
 
-    dataset_path = os.path.join(os.path.pardir(__file__) ,'..\\balloon\\datasets.csv')
+    dataset_path = os.path.join(os.path.dirname(__file__) ,'..\\balloon\\datasets.csv')
 
     f = open(dataset_path, 'a')
     writer = csv.writer(f, delimiter=',')
