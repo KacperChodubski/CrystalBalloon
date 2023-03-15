@@ -10,6 +10,9 @@ import os
 sondehub_DC = sdc.Sondehub_data_collector()
 ecmwf_DC = edc.ECMWF_data_collector()
 
+def data_validation(base, next):
+    lat, lon, alt, datetime = base
+
 def create_dataset():
 
     steps_forward = 1

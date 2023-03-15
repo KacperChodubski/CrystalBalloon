@@ -24,7 +24,7 @@ class ViewMap:
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
 
-        self.ax.set_extent([-13, 45, 30, 70])
+        self.ax.set_extent([13, 25, 48, 56])
         self.ax.add_image(request, 6, interpolation='spline36')
         self.ax.add_feature(cfeature.OCEAN)
         self.ax.add_feature(cfeature.BORDERS)

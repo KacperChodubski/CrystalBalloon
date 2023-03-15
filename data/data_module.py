@@ -1,3 +1,4 @@
+from typing import Tuple
 import torch
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
@@ -7,11 +8,11 @@ import os
 
 
 class BalloonDataset(Dataset):
-    def __init__(self, transform=None):
+    def __init__(self, z_score:Tuple = None):
         cur_path = os.path.dirname(__file__)
         self.path = os.path.join(cur_path, 'balloon/datasets.csv')
         #self.path = '/Users/mojskarb/stardust/data/balloon/datasets.csv'
-        self.transform = transform
+        self.z_score = z_score
 
         xy = np.loadtxt(self.path, delimiter=',', dtype=np.float32)
         self.lats = xy[:, 0]
@@ -26,8 +27,8 @@ class BalloonDataset(Dataset):
         self.n_samples = xy.shape[0]
 
     def __getitem__(self, index):
-        if self.transform:
-            self.x = self.transform(self.x)
+        if self.z_score:
+            self.x[index] = (self.x[index] - self.z_score[0]) / self.z_score[1]
         return self.x[index], self.y[index]
 
     def __len__(self):

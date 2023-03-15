@@ -14,9 +14,9 @@ class PredictionModel(nn.Module):
     def __init__(self, dataset):
 
         # hyperparameters
-        hidden_size = 64
-        learinging_rate = 3e-3
-        batch_size = 16
+        hidden_size = 32
+        learinging_rate = 1e-3
+        batch_size = 32
 
         # Loading data
     
@@ -34,16 +34,19 @@ class PredictionModel(nn.Module):
         features, _ = train_data
 
         input_size =  features.shape[1]
-        self.mean, self.std = self._calculate_mean_std(self.train_loader ,train_set, input_size)
+        self.mean, self.std = self._calculate_mean_std(self.train_loader, train_set, input_size)
 
-        #train_set.dataset.transform = transforms.Normalize(self.mean, self.std)
-        #self.test_set.dataset.transform = transforms.Normalize(self.mean, self.std)
+        #print(train_data[0])
 
-        self.train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-        self.test_loader = DataLoader(self.test_set, batch_size=len(self.test_set), shuffle=False)
+        # train_set.dataset.z_score = (self.mean, self.std)
+        # self.test_set.dataset.z_score = (self.mean, self.std)
 
-        train_data = next(iter(self.train_loader))
-        print(train_data[0])
+        # self.train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+        # self.test_loader = DataLoader(self.test_set, batch_size=len(self.test_set), shuffle=False)
+
+        # train_data = next(iter(self.train_loader))
+
+        #print(train_data[0])
 
         super(PredictionModel, self).__init__()
 
@@ -199,7 +202,6 @@ class PredictionModel(nn.Module):
                 prediciton = pred_model(input_for_pred)
                 
                 input_for_pred = torch.tensor(inputs, dtype=torch.float32)
-                input_for_pred = (input_for_pred - self.mean) / self.std  
 
                 map_view.add_point(lat_pred, lon_pred, False)
                 map_view.add_point(lat_target, lon_target, True)
@@ -226,6 +228,6 @@ if __name__ == '__main__':
     dataset = BalloonDataset()
 
     pred_model = PredictionModel(dataset=dataset)
-    num_epochs = 50
+    num_epochs = 100
     pred_model.train(num_epochs)
     pred_model.validation()
