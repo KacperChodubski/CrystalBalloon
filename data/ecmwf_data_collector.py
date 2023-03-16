@@ -116,6 +116,12 @@ class ECMWF_data_collector:
         wind_u: float = None
         wind_v: float = None
 
+        # slownik[level + step + lat + long]
+        # {
+        #     "t" : 1,
+        #     "u": 2,
+        #     "v": 3
+        # }
 
         for grb in grbs:
             if grb.level == pressure and grb.step == step_of_balloon:
@@ -127,7 +133,7 @@ class ECMWF_data_collector:
                     wind_v = grb.values[index_lat][index_lon]
 
                 if temp and wind_u and wind_v:
-                    print(grbs.__dir__())
+                    break
 
         # grbs.close()
         if temp == None or wind_u == None or wind_v == None:
@@ -140,8 +146,3 @@ if __name__ == '__main__':
     st = timer.time()
     temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
     print(timer.time() - st)
-    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
-    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
-    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
-    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
-    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
