@@ -15,8 +15,8 @@ ecmwf_DC = edc.ECMWF_data_collector()
 def create_dataset():
 
     steps_forward = 1
-    start = 1500
-    finish = 2000
+    start = 4500
+    finish = 5000
 
     
     sondehub_data_frame = sondehub_DC.get_dataFrame()

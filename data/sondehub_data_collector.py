@@ -3,6 +3,7 @@ from distutils.command.build_scripts import first_line_re
 from email import header
 from math import fabs
 from queue import Empty
+from random import random, randrange
 from tokenize import String
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ import sondehub
 import datetime as date
 from dateutil import parser
 import os
+import random
 
 
 
@@ -19,7 +21,8 @@ class Sondehub_data_collector:
         self.header_list = ('serial','datetime','alt','lat', 'lon','vel_h', 'vel_v', 'pressure', 'mass')
         self.cur_dir = os.path.dirname(__file__)
         self.dataFrame: pd.DataFrame = None
-        self.data_rate = 60
+        self.max_data_rate = 90
+        random.seed()
 
         
         self.file_path = os.path.join(self.cur_dir, "balloon/sondehub_datas.csv")
@@ -44,7 +47,9 @@ class Sondehub_data_collector:
 
             self.dataFrame['pressure'] = round(self.dataFrame['pressure'].interpolate(), 1)
             self.dataFrame.drop_duplicates(subset='datetime', inplace=True)
-            self.dataFrame = self.dataFrame.loc[::self.data_rate, :]
+            sample_rate = randrange(start=10, stop=self.max_data_rate)
+            print(sample_rate)
+            self.dataFrame = self.dataFrame.loc[::sample_rate, :]
             self.dataFrame = self.dataFrame[self.dataFrame.pressure.notnull()]
 
             self.dataFrame.to_csv(path_or_buf=self.file_path, mode='a', index=False, header=False)
@@ -64,4 +69,4 @@ class Sondehub_data_collector:
 
 if __name__ == '__main__':
     sonde = Sondehub_data_collector()
-    sonde.download_data('U2310509' ,date.datetime.fromisoformat('2023-03-12'))
+    sonde.download_data('U1310126' ,date.datetime.fromisoformat('2023-03-16'))

@@ -9,6 +9,7 @@ import pygrib
 import math
 import os
 from os.path import isfile
+import time as timer
 
 class ECMWF_data_collector:
     def __init__(self):
@@ -20,6 +21,7 @@ class ECMWF_data_collector:
         self.steps = [0, 3, 6, 9, 12, 15, 18, 21]
         self.levels = [1000, 925, 850, 700, 500, 300, 250, 200, 50]
         self.params = ["t", "v", "u", 'msl',]
+        self.opened_file = None
 
     def _round_pressure(self, pressure):
         min_val = 100000
@@ -86,7 +88,22 @@ class ECMWF_data_collector:
         file_forecast_balloon = os.path.join(self.dir_path, 'forecast'+ str(datetime.date())+'.grib2')
         if not isfile((file_forecast_balloon)):
             self.download_data(datetime.date())
-        grbs = pygrib.open(file_forecast_balloon)
+
+        grbs = None
+
+        # store opened file in var, if date is changed load different file
+        if self.opened_file is not None and self.opened_file["dt"] == datetime: 
+            grbs = self.opened_file["grbs"]
+        else:
+            if self.opened_file:
+                self.opened_file['grbs'].close()
+                
+            grbs = pygrib.open(file_forecast_balloon)
+            self.opened_file = {
+                "dt": datetime,
+                "grbs": grbs
+            }
+
 
         pressure = self._round_pressure(pressure)
         step_of_balloon = self._step_of_datetime(datetime)
@@ -98,7 +115,7 @@ class ECMWF_data_collector:
         temp: float = None
         wind_u: float = None
         wind_v: float = None
-        msl: float = None
+
 
         for grb in grbs:
             if grb.level == pressure and grb.step == step_of_balloon:
@@ -109,11 +126,22 @@ class ECMWF_data_collector:
                 if grb.shortName == "v":
                     wind_v = grb.values[index_lat][index_lon]
 
-        grbs.close()
+                if temp and wind_u and wind_v:
+                    print(grbs.__dir__())
+
+        # grbs.close()
         if temp == None or wind_u == None or wind_v == None:
             print('Warning: there isnt temp, wind_u and wind_v in ecmwf data')
         return temp, wind_u, wind_v
 
 if __name__ == '__main__':
     ecmwf = ECMWF_data_collector()
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
+    st = timer.time()
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
+    print(timer.time() - st)
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
     temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
