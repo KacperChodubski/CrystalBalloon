@@ -1,4 +1,5 @@
 import pandas
+from torch import _sparse_compressed_tensor_unsafe
 import ecmwf_data_collector as edc
 import sondehub_data_collector as sdc
 import pandas as pd
@@ -9,24 +10,27 @@ import os
 
 sondehub_DC = sdc.Sondehub_data_collector()
 ecmwf_DC = edc.ECMWF_data_collector()
-
-def data_validation(base, next):
-    lat, lon, alt, datetime = base
+    
 
 def create_dataset():
 
     steps_forward = 1
-    start = 1800
-    finish = 2100
+    start = 1500
+    finish = 2000
 
     
     sondehub_data_frame = sondehub_DC.get_dataFrame()
 
     finish = min(finish, sondehub_data_frame.shape[0]-steps_forward)
 
-    dataset_path = os.path.join(os.path.dirname(__file__) ,'..\\balloon\\datasets.csv')
+    dir_path = os.path.dirname(__file__)
 
-    f = open(dataset_path, 'a')
+    dataset_path = os.path.join(dir_path, "balloon/datasets.csv")
+
+    if start == 0:
+        f = open(dataset_path, 'w')
+    else: 
+        f = open(dataset_path, 'a')
     writer = csv.writer(f, delimiter=',')
 
     for i in range(start, finish, 1):
@@ -44,6 +48,8 @@ def create_dataset():
             lat_next = float(sdf_next['lat'])
             lon_next = float(sdf_next['lon'])
             alt_next = float(sdf_next['alt'])
+            dt_next = datetime.datetime.fromisoformat(sdf_next.datetime.item())
+            dt = datetime.datetime.fromisoformat(sdf.datetime.item())
 
             lat = float(sdf['lat'])
             lon = float(sdf['lon'])
@@ -71,8 +77,9 @@ def create_dataset():
         lat_dif = float(lat_dif)
         lon_dif = float(lon_dif)
         alt_dif = float(alt_dif)
+        deltatime = (dt_next - dt).total_seconds()
 
-        row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, lat_dif * 100, lon_dif * 100, alt_dif / 1000]
+        row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, deltatime, lat_dif * 100, lon_dif * 100, alt_dif / 1000]
         writer.writerow(row)
     
 

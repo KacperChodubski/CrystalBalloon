@@ -14,9 +14,10 @@ class PredictionModel(nn.Module):
     def __init__(self, dataset):
 
         # hyperparameters
-        hidden_size = 32
+        hidden_size = 8
         learinging_rate = 1e-3
-        batch_size = 32
+        batch_size = 16
+        momentum = 0.9
 
         # Loading data
     
@@ -24,7 +25,7 @@ class PredictionModel(nn.Module):
         test_size = len(dataset) - train_size
 
         train_set, self.test_set = torch.utils.data.random_split(dataset, [train_size, test_size])
-        self.train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+        self.train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=False)
         self.test_loader = DataLoader(self.test_set, batch_size=1, shuffle=False)
 
         # Setting up input size
@@ -36,17 +37,14 @@ class PredictionModel(nn.Module):
         input_size =  features.shape[1]
         self.mean, self.std = self._calculate_mean_std(self.train_loader, train_set, input_size)
 
-        #print(train_data[0])
+        train_set.dataset.z_score = (self.mean, self.std)
+        self.test_set.dataset.z_score = (self.mean, self.std)
 
-        # train_set.dataset.z_score = (self.mean, self.std)
-        # self.test_set.dataset.z_score = (self.mean, self.std)
+        self.train_loader_norm = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+        self.test_loader_norm = DataLoader(self.test_set, batch_size=len(self.test_set), shuffle=False)
 
-        # self.train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-        # self.test_loader = DataLoader(self.test_set, batch_size=len(self.test_set), shuffle=False)
+        train_data_norm = next(iter(self.train_loader_norm))
 
-        # train_data = next(iter(self.train_loader))
-
-        #print(train_data[0])
 
         super(PredictionModel, self).__init__()
 
@@ -73,26 +71,25 @@ class PredictionModel(nn.Module):
         # Setting up optimizer and criterion
 
         self.criterion = nn.MSELoss()
-        #self.optimizer = torch.optim.SGD(self.parameters(), lr=learinging_rate, momentum=0.99)
+        #self.optimizer = torch.optim.SGD(self.parameters(), lr=learinging_rate, momentum=momentum)
         self.optimizer = torch.optim.Adam(self.parameters(), lr= learinging_rate)
-
         
 
     def forward(self, x):
 
         out1 = self.l1_1(x)
         out1 = self.l1_2(out1)
-        out1 = self.l1_3(out1)
+        #out1 = self.l1_3(out1)
         out1 = self.l1_4(out1)
 
         out2 = self.l2_1(x)
         out2 = self.l2_2(out2)
-        out2 = self.l2_3(out2)
+        #out2 = self.l2_3(out2)
         out2 = self.l2_4(out2)
 
         out3 = self.l3_1(x)
         out3 = self.l3_2(out3)
-        out3 = self.l3_3(out3)
+        #out3 = self.l3_3(out3)
         out3 = self.l3_4(out3)
 
         return {'lat': out1, 'lon': out2, 'alt': out3}
@@ -100,7 +97,8 @@ class PredictionModel(nn.Module):
     def train_step(self):
         running_loss = 0.0
 
-        for i, (inputs, labels) in enumerate(self.train_loader):
+        for samples in self.train_loader_norm:
+            inputs, labels = samples
 
             def closure_lat():
                 self.optimizer.zero_grad()
@@ -142,8 +140,6 @@ class PredictionModel(nn.Module):
                 loss3 = self.criterion(alt_pred, target)
                 loss3.backward()
                 return loss3
-
-                
             
             self.optimizer.step(closure_lat)
             self.optimizer.step(closure_lon)
@@ -228,6 +224,6 @@ if __name__ == '__main__':
     dataset = BalloonDataset()
 
     pred_model = PredictionModel(dataset=dataset)
-    num_epochs = 100
+    num_epochs = 300
     pred_model.train(num_epochs)
     pred_model.validation()

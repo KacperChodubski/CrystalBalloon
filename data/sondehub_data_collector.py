@@ -22,7 +22,7 @@ class Sondehub_data_collector:
         self.data_rate = 60
 
         
-        self.file_path = os.path.join(self.cur_dir, '..\\balloon\\sondehub_datas.csv')
+        self.file_path = os.path.join(self.cur_dir, "balloon/sondehub_datas.csv")
 
     def _convert_datatime(self, sonde_datetime: str):
         substr = sonde_datetime[:10] + '-' + sonde_datetime[11:19]
@@ -47,7 +47,7 @@ class Sondehub_data_collector:
             self.dataFrame = self.dataFrame.loc[::self.data_rate, :]
             self.dataFrame = self.dataFrame[self.dataFrame.pressure.notnull()]
 
-            self.dataFrame.to_csv(self.file_path, mode='a', index=False, header=False)
+            self.dataFrame.to_csv(path_or_buf=self.file_path, mode='a', index=False, header=False)
             print('Balloon ' + serial_n + ' was dwonloaded')
             return self.file_path
         else:
@@ -56,12 +56,12 @@ class Sondehub_data_collector:
         
     def get_dataFrame(self):
         try:
-            self.dataFrame = pd.read_csv(self.file_path)
-            return self.dataFrame
+            dataFrame = pd.read_csv(self.file_path)
+            return dataFrame
         except:
             return None
 
 
 if __name__ == '__main__':
     sonde = Sondehub_data_collector()
-    sonde.download_data('U2310509' ,date.datetime.fromisoformat('2023-03-13'))
+    sonde.download_data('U2310509' ,date.datetime.fromisoformat('2023-03-12'))

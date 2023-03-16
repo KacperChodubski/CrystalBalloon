@@ -27,9 +27,10 @@ class BalloonDataset(Dataset):
         self.n_samples = xy.shape[0]
 
     def __getitem__(self, index):
+        inputs = self.x[index]
         if self.z_score:
-            self.x[index] = (self.x[index] - self.z_score[0]) / self.z_score[1]
-        return self.x[index], self.y[index]
+            inputs = (self.x[index] - self.z_score[0]) / self.z_score[1]
+        return inputs, self.y[index]
 
     def __len__(self):
         return self.n_samples

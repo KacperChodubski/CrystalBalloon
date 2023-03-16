@@ -116,5 +116,4 @@ class ECMWF_data_collector:
 
 if __name__ == '__main__':
     ecmwf = ECMWF_data_collector()
-    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-14 07:07:58'))
-    #print(temp-273)
+    temp, wind_u, wind_v = ecmwf.get_data(54.5189, 18.5319, 13.49, datetime=datetime.datetime.fromisoformat('2023-03-16 07:07:58'))
