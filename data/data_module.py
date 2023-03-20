@@ -8,10 +8,9 @@ import os
 
 
 class BalloonDataset(Dataset):
-    def __init__(self, z_score:Tuple = None):
-        cur_path = os.path.dirname(__file__)
-        self.path = os.path.join(cur_path, 'balloon/datasets.csv')
-        #self.path = '/Users/mojskarb/stardust/data/balloon/datasets.csv'
+    def __init__(self,path, z_score:Tuple = None):
+        self.path = path
+        
         self.z_score = z_score
 
         xy = np.loadtxt(self.path, delimiter=',', dtype=np.float32)

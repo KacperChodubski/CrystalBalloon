@@ -15,8 +15,8 @@ ecmwf_DC = edc.ECMWF_data_collector()
 def create_dataset():
 
     steps_forward = 1
-    start = 4500
-    finish = 5000
+    start = 6500
+    finish = 7500
 
     
     sondehub_data_frame = sondehub_DC.get_dataFrame()
@@ -25,13 +25,17 @@ def create_dataset():
 
     dir_path = os.path.dirname(__file__)
 
-    dataset_path = os.path.join(dir_path, "balloon/datasets.csv")
+    dataset_up_path = os.path.join(dir_path, "balloon/datasets_up.csv")
+    dataset_down_path = os.path.join(dir_path, "balloon/datasets_down.csv")
 
     if start == 0:
-        f = open(dataset_path, 'w')
+        f_up = open(dataset_up_path, 'w')
+        f_down = open(dataset_down_path, 'w')
     else: 
-        f = open(dataset_path, 'a')
-    writer = csv.writer(f, delimiter=',')
+        f_up = open(dataset_up_path, 'a')
+        f_down = open(dataset_down_path, 'a')
+    writer_up = csv.writer(f_up, delimiter=',')
+    writer_down = csv.writer(f_down, delimiter=',')
 
     for i in range(start, finish, 1):
 
@@ -41,7 +45,7 @@ def create_dataset():
         print(f' {percent_done}% done','#' * math.floor(percent_done/5), end="\r")
         sdf = sondehub_data_frame.iloc[[i]]
         sdf_next = sondehub_data_frame.iloc[[i+steps_forward]]
-        if (sdf['serial'].values[0] != sdf_next['serial'].values[0]):
+        if (sdf['serial'].item() != sdf_next['serial'].item()):
             continue
 
         try:
@@ -65,9 +69,6 @@ def create_dataset():
         lon_dif = (lon_next - lon)
         alt_dif = (alt_next - alt)
 
-        if (alt_dif < -50):
-            continue
-
         sdf_date = datetime.datetime.fromisoformat(sdf['datetime'].values.item())
         temp, wind_u, wind_v = ecmwf_DC.get_data(lat, lon, pressure, datetime = sdf_date)
 
@@ -80,7 +81,10 @@ def create_dataset():
         deltatime = (dt_next - dt).total_seconds()
 
         row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, deltatime, lat_dif * 100, lon_dif * 100, alt_dif / 1000]
-        writer.writerow(row)
+        if (alt_dif < -50):
+            writer_down.writerow(row)
+        else:
+            writer_up.writerow(row)
     
 
 
