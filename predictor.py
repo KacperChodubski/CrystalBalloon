@@ -72,18 +72,18 @@ class Predictor:
 
 if __name__ == '__main__':
 
-    lat, lon = 53.783831, 15.836653
+    lat, lon = 53.5965, 19.5513
     alt = 272
     alt0 = 50
     mass = 4
-    date = '2023-03-20 07:00:00'
+    date = '2023-03-20 20:00:00'
 
     balloon_mass = 'h1600'
     payload = 3500
     ascent_rate = 5
 
     burst_altitude = ut.calculate_burst_altitude(balloon_mass, payload, ascent_rate)
-    burst_altitude = 36567
+    #burst_altitude = 36567
 
     predictor = Predictor()
     predictor.predict(lat, lon, alt, alt0, mass, datetime.datetime.fromisoformat(date), burst_altitude)

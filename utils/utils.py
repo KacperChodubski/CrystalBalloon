@@ -1,6 +1,10 @@
 import math
 import datetime
+import torch
+from data import data_module
 import data.ecmwf_data_collector
+from torch.utils.data import DataLoader
+from data.data_module import BalloonDataset
 
 def find_bd(balloon_mass: str):
         burst_diameters = {
@@ -98,3 +102,41 @@ def calculate_pressure(ecmwf: data.ecmwf_data_collector.ECMWF_data_collector, la
         pressure = msl * math.exp((-g0 * M * (alt - alt0)) / (R*Tb))
 
     return pressure
+
+
+def get_data_loaders(trainging_config, should_normalize = True):
+    dataset = BalloonDataset(trainging_config['dataset_path'])
+
+    train_size = round(len(dataset) * trainging_config['train_ratio'])
+    test_size = len(dataset) - train_size
+
+    train_set, test_set = torch.utils.data.random_split(dataset, [train_size, test_size])
+    train_loader = DataLoader(train_set, batch_size=trainging_config['train_batch_size'], shuffle=False)
+    test_loader = DataLoader(test_set, batch_size=trainging_config['test_batch_size'], shuffle=False)
+
+    input_size = 6
+
+    mean, std = calculate_mean_std(train_loader, train_set, input_size)
+
+    train_set.dataset.z_score = (mean, std)
+    test_set.dataset.z_score = (mean, std)
+
+    train_loader_norm = DataLoader(train_set, batch_size=trainging_config['train_batch_size'], shuffle=True)
+    test_loader_norm = DataLoader(test_set, batch_size=trainging_config['test_batch_size'], shuffle=False)
+
+    return train_loader_norm, test_loader_norm
+
+
+def calculate_mean_std(train_loader, train_set, feature_size):
+    num_of_features = len(train_set) * feature_size
+
+    total_sum = 0
+    for batch in train_loader: total_sum += batch[0].sum()
+    mean = total_sum / num_of_features
+
+    sum_of_squared_error = 0
+    for batch in train_loader: sum_of_squared_error += ((batch[0] - mean).pow(2)).sum()
+    std = torch.sqrt(sum_of_squared_error / num_of_features)
+
+    return mean, std
+     
