@@ -77,6 +77,7 @@ def create_dataset(start, finish):
             writer_down.writerow(row)
         else:
             writer_up.writerow(row)
+
     
 
 
@@ -88,5 +89,5 @@ if __name__ == '__main__':
     start = 6487
     # Last line in sondehub_datas.csv file
     finish = 6489
-    create_dataset()
+    create_dataset(start=start, finish=finish)
         

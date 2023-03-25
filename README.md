@@ -10,7 +10,7 @@ Balloons data are downloaded from [sondehub](https://sondehub.org) and forecast 
 
 1. Open Anaconda Prompt and navigate into project directory `cd path_to_repo`
 2. Run `conda env create`
-3. Run `conda actiave CB` or set interpreter in your ide
+3. Run `conda activate CB` or set interpreter in your ide
 
 # Usage
 
@@ -33,4 +33,4 @@ There is lack of prepered datasets that is why there is implemented dataset make
 
 # Author notes
 
-There is huge progress opportunity by giving more input data which influence flight path like mass, used gas and type of balloon. Since sondehub dont provide this information it is set to be constant 4kg because of limit by Poland's flight law.
+There is huge progress opportunity by giving more input data which influence flight path like mass, used gas and type of balloon. Since sondehub doesnt provide mass it is set to be constant 4kg because of limit by Poland's flight law.

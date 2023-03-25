@@ -14,16 +14,19 @@ class Predictor:
 
         # Prepare the models (up and down) - load the weights and put the model into evaluation mode
         self.model_up = PredictionModel().to(self.device)
-        training_state = torch.load(os.path.join(predictor_config["model_binaries_path"], predictor_config["model_up_name"]))
-        state_dict = training_state["state_dict"]
-        self.model_up.load_state_dict(state_dict, strict=True)
+        training_state_up = torch.load(os.path.join(predictor_config["model_binaries_path"], predictor_config["model_up_name"]))
+        state_dict_up= training_state_up["state_dict"]
+        self.model_up.load_state_dict(state_dict_up, strict=True)
         self.model_up.eval()
 
         self.model_down = PredictionModel().to(self.device)
-        training_state = torch.load(os.path.join(predictor_config["model_binaries_path"], predictor_config["model_down_name"]))
-        state_dict = training_state["state_dict"]
-        self.model_down.load_state_dict(state_dict, strict=True)
-        self.model_down.eval()    
+        training_state_down = torch.load(os.path.join(predictor_config["model_binaries_path"], predictor_config["model_down_name"]))
+        state_dict_down = training_state_down["state_dict"]
+        self.model_down.load_state_dict(state_dict_down, strict=True)
+        self.model_down.eval()
+
+        print(state_dict_up)
+        print(state_dict_down)
 
         self.view = ViewMap()
         self.ecmwf = ECMWF_data_collector()
@@ -97,14 +100,15 @@ if __name__ == '__main__':
     ascent_rate = 5 # m/s
 
     burst_altitude = ut.calculate_burst_altitude(balloon_mass, payload, ascent_rate)
+    burst_altitude = 1000
 
     model_binaries_path = os.path.join(os.path.dirname(__file__), 'trained_models', 'binaries')
 
     # Define path to trained models for upward and downward movement
     predictor_config = {
         'model_binaries_path': model_binaries_path,
-        'model_up_name': 'model_up_test.pth',
-        'model_down_name': 'model_down_test.pth',
+        'model_up_name': 'model_up.pth',
+        'model_down_name': 'model_down.pth',
     }
 
     date = datetime.datetime.fromisoformat(date)

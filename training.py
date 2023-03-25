@@ -1,3 +1,4 @@
+from scipy.datasets import download_all
 import torch
 import torch.nn as nn
 import utils.utils as utils
@@ -90,7 +91,8 @@ def train(training_config):
     torch.save(training_state, os.path.join(training_config['model_binaries_path'], model_name))
 
 if __name__ == "__main__":
-    dataset_path = os.path.join(os.path.dirname(__file__), 'data', 'balloon', 'datasets_up.csv')
+    dataset_up_path = os.path.join(os.path.dirname(__file__), 'data', 'balloon', 'datasets_up.csv')
+    dataset_down_path = os.path.join(os.path.dirname(__file__), 'data', 'balloon', 'datasets_down.csv')
     model_binaries_path = os.path.join(os.path.dirname(__file__), 'trained_models', 'binaries')
 
 
@@ -101,12 +103,12 @@ if __name__ == "__main__":
     'hidden_size': 8,
     'learinging_rate': 1e-3,
     'momentum': 0.99,
-    'num_of_epochs': 70,
+    'num_of_epochs': 100,
     'train_batch_size': 2,
     'test_batch_size': 32,
     'train_ratio': 0.8,
     'model_name': 'up',
-    'dataset_path': dataset_path,
+    'dataset_path': dataset_up_path,
     'model_binaries_path': model_binaries_path,
     'enable_tensorboard': True,
     'console_log_freq': 400,
@@ -118,12 +120,12 @@ if __name__ == "__main__":
         'hidden_size': 8,
         'learinging_rate': 1e-3,
         'momentum': 0.99,
-        'num_of_epochs': 70,
+        'num_of_epochs': 100,
         'train_batch_size': 2,
         'test_batch_size': 32,
         'train_ratio': 0.8,
         'model_name': 'down',
-        'dataset_path': dataset_path,
+        'dataset_path': dataset_down_path,
         'model_binaries_path': model_binaries_path,
         'enable_tensorboard': True,
         'console_log_freq': 400,
