@@ -1,10 +1,5 @@
 import datetime
-from email import header
-from operator import index
-from tokenize import String
-from wsgiref import headers
 from ecmwf.opendata import Client
-import pandas as pd
 import pygrib
 import math
 import os
@@ -57,7 +52,7 @@ class ECMWF_data_collector:
         res = self.client.retrieve(request=self.request, target=self.file_path)
         return self.file_path
 
-    def set_data_file(self, path: String):
+    def set_data_file(self, path: str):
         self.file_path = path
 
     def _get_lon_index(self, lon):
@@ -115,13 +110,6 @@ class ECMWF_data_collector:
         temp: float = None
         wind_u: float = None
         wind_v: float = None
-
-        # slownik[level + step + lat + long]
-        # {
-        #     "t" : 1,
-        #     "u": 2,
-        #     "v": 3
-        # }
 
         for grb in grbs:
             if grb.level == pressure and grb.step == step_of_balloon:

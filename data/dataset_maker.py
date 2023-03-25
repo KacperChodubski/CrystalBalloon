@@ -1,8 +1,5 @@
-import pandas
-from torch import _sparse_compressed_tensor_unsafe
 import ecmwf_data_collector as edc
 import sondehub_data_collector as sdc
-import pandas as pd
 import csv
 import datetime
 import math
@@ -12,16 +9,11 @@ sondehub_DC = sdc.Sondehub_data_collector()
 ecmwf_DC = edc.ECMWF_data_collector()
     
 
-def create_dataset():
-
-    steps_forward = 1
-    start = 6500
-    finish = 7500
-
+def create_dataset(start, finish):
     
     sondehub_data_frame = sondehub_DC.get_dataFrame()
 
-    finish = min(finish, sondehub_data_frame.shape[0]-steps_forward)
+    finish = min(finish, sondehub_data_frame.shape[0]-1)
 
     dir_path = os.path.dirname(__file__)
 
@@ -44,7 +36,7 @@ def create_dataset():
         
         print(f' {percent_done}% done','#' * math.floor(percent_done/5), end="\r")
         sdf = sondehub_data_frame.iloc[[i]]
-        sdf_next = sondehub_data_frame.iloc[[i+steps_forward]]
+        sdf_next = sondehub_data_frame.iloc[[i+1]]
         if (sdf['serial'].item() != sdf_next['serial'].item()):
             continue
 
@@ -80,7 +72,7 @@ def create_dataset():
         alt_dif = float(alt_dif)
         deltatime = (dt_next - dt).total_seconds()
 
-        row = [lat, lon, alt, pressure, mass, temp, wind_u, wind_v, deltatime, lat_dif * 100, lon_dif * 100, alt_dif / 1000]
+        row = [pressure, mass, temp, wind_u, wind_v, deltatime, lat_dif * 100, lon_dif * 100, alt_dif / 1000]
         if (alt_dif < -50):
             writer_down.writerow(row)
         else:
@@ -92,5 +84,9 @@ def create_dataset():
 
 
 if __name__ == '__main__':
+    # First line in sondehub_datas.csv file
+    start = 6487
+    # Last line in sondehub_datas.csv file
+    finish = 6489
     create_dataset()
         

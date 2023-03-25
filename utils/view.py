@@ -1,10 +1,7 @@
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import numpy as np
 import cartopy.feature as cfeature
 import cartopy.io.img_tiles as cimgt
-import scipy
-import scipy.interpolate 
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
 

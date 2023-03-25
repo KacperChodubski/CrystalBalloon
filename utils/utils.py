@@ -1,10 +1,36 @@
 import math
 import datetime
 import torch
-from data import data_module
 import data.ecmwf_data_collector
-from torch.utils.data import DataLoader
-from data.data_module import BalloonDataset
+from torch.utils.data import DataLoader, Dataset
+import numpy as np
+
+DATA_MEAN = 86.6239
+DATA_STD = 151.8148
+
+class BalloonDataset(Dataset):
+    def __init__(self,path, normalize = True):
+        self.path = path
+        self.normalize = normalize
+
+        xy = np.loadtxt(self.path, delimiter=',', dtype=np.float32)
+
+        self.x = xy[:, :-3]
+        
+        self.x = torch.from_numpy(self.x)
+        self.y = torch.from_numpy(xy[:, -3:])
+
+        self.n_samples = xy.shape[0]
+
+    def __getitem__(self, index):
+        inputs = self.x[index]
+        if self.normalize:
+            inputs = (self.x[index] - DATA_MEAN) / DATA_STD
+        return inputs, self.y[index]
+
+    def __len__(self):
+        return self.n_samples
+
 
 def find_bd(balloon_mass: str):
         burst_diameters = {
@@ -103,28 +129,25 @@ def calculate_pressure(ecmwf: data.ecmwf_data_collector.ECMWF_data_collector, la
 
     return pressure
 
+def prepare_data(input, device, batch_size = 1, should_normalize = True):
+     input = torch.Tensor(input)
+     input = (input - DATA_MEAN) / DATA_STD
+     input = input.to(device)
+     input.repeat(batch_size, 1, 1, 1)
+     return input
+
 
 def get_data_loaders(trainging_config, should_normalize = True):
-    dataset = BalloonDataset(trainging_config['dataset_path'])
+    dataset = BalloonDataset(trainging_config['dataset_path'], should_normalize)
 
     train_size = round(len(dataset) * trainging_config['train_ratio'])
     test_size = len(dataset) - train_size
 
     train_set, test_set = torch.utils.data.random_split(dataset, [train_size, test_size])
-    train_loader = DataLoader(train_set, batch_size=trainging_config['train_batch_size'], shuffle=False)
+    train_loader = DataLoader(train_set, batch_size=trainging_config['train_batch_size'], shuffle=True)
     test_loader = DataLoader(test_set, batch_size=trainging_config['test_batch_size'], shuffle=False)
 
-    input_size = 6
-
-    mean, std = calculate_mean_std(train_loader, train_set, input_size)
-
-    train_set.dataset.z_score = (mean, std)
-    test_set.dataset.z_score = (mean, std)
-
-    train_loader_norm = DataLoader(train_set, batch_size=trainging_config['train_batch_size'], shuffle=True)
-    test_loader_norm = DataLoader(test_set, batch_size=trainging_config['test_batch_size'], shuffle=False)
-
-    return train_loader_norm, test_loader_norm
+    return train_loader, test_loader
 
 
 def calculate_mean_std(train_loader, train_set, feature_size):

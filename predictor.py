@@ -1,36 +1,34 @@
-import math
-
-from numpy import dtype
 from model.model import PredictionModel
 from data.ecmwf_data_collector import ECMWF_data_collector
 from utils.view import ViewMap
-from data.data_module import BalloonDataset
 import datetime
 import torch
-import time as ttime
 import os
 import utils.utils as ut
 
 
 class Predictor:
-    def __init__(self):
-        self.ecmwf = ECMWF_data_collector()
+    def __init__(self, predictor_config):
 
-        cur_path = os.path.dirname(__file__)
-        path_up = os.path.join(cur_path, 'data/balloon/datasets_up.csv')
-        path_down = os.path.join(cur_path, 'data/balloon/datasets_down.csv')
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        dataset_up = BalloonDataset(path_up)
-        dataset_down = BalloonDataset(path_down)
-        self.model_up = PredictionModel(dataset=dataset_up)
-        self.model_down = PredictionModel(dataset=dataset_down)
-        num_epochs = 30
-        self.model_up.train(num_epochs)
-        self.model_down.train(num_epochs)
+        # Prepare the models (up and down) - load the weights and put the model into evaluation mode
+        self.model_up = PredictionModel().to(self.device)
+        training_state = torch.load(os.path.join(predictor_config["model_binaries_path"], predictor_config["model_up_name"]))
+        state_dict = training_state["state_dict"]
+        self.model_up.load_state_dict(state_dict, strict=True)
+        self.model_up.eval()
+
+        self.model_down = PredictionModel().to(self.device)
+        training_state = torch.load(os.path.join(predictor_config["model_binaries_path"], predictor_config["model_down_name"]))
+        state_dict = training_state["state_dict"]
+        self.model_down.load_state_dict(state_dict, strict=True)
+        self.model_down.eval()    
 
         self.view = ViewMap()
+        self.ecmwf = ECMWF_data_collector()
     
-    def predict(self, lat, lon, alt, alt0, mass, time: datetime.datetime, burst_altitude: float):
+    def predict(self, lat, lon, alt, alt0, mass, time: datetime.datetime, burst_altitude: float, n_of_predictions = None):
         with torch.no_grad():
             lat_pred = lat
             lon_pred = lon
@@ -42,7 +40,7 @@ class Predictor:
             burst_alt = burst_altitude
             cur_model = self.model_up
 
-            while predictions_n < 180 and alt_pred >= 0:
+            while  (not n_of_predictions or predictions_n < n_of_predictions) and alt_pred >= 0:
                 print('prediction: ', predictions_n)
                 predictions_n += 1
 
@@ -53,8 +51,7 @@ class Predictor:
                 temp, wind_u, wind_v = self.ecmwf.get_data(lat_pred, lon_pred, pressure, time_pred)
 
                 input_for_pred = [pressure, mass, temp, wind_u, wind_v, delta_time.total_seconds()]
-                input_for_pred = torch.tensor(input_for_pred, dtype=torch.float32)
-                input_for_pred = (input_for_pred - cur_model.mean) / cur_model.std
+                input_for_pred = ut.prepare_data(input_for_pred, self.device)
 
                 prediciton = cur_model(input_for_pred)
 
@@ -72,18 +69,45 @@ class Predictor:
 
 if __name__ == '__main__':
 
-    lat, lon = 53.5965, 19.5513
-    alt = 272
-    alt0 = 50
-    mass = 4
-    date = '2023-03-20 20:00:00'
+    # Setting parameters of flight
 
-    balloon_mass = 'h1600'
-    payload = 3500
-    ascent_rate = 5
+    predictions_limit = 40 # limit of made precitions
+    lat, lon = 53.5965, 19.5513
+    alt = 272 # metes
+    alt0 = 50 # meters
+    mass = 4 # kg (dont change that)
+    date = '2023-03-25 12:00:00'
+
+    """
+    Selecting type of balloon from:
+            h100
+            h300
+            h350
+            h500
+            h600
+            h800
+            h1000
+            h1200
+            h1600
+            h2000
+            h3000
+    """
+    balloon_mass = 'h1200'
+    payload = 3500 # grams
+    ascent_rate = 5 # m/s
 
     burst_altitude = ut.calculate_burst_altitude(balloon_mass, payload, ascent_rate)
-    #burst_altitude = 36567
 
-    predictor = Predictor()
-    predictor.predict(lat, lon, alt, alt0, mass, datetime.datetime.fromisoformat(date), burst_altitude)
+    model_binaries_path = os.path.join(os.path.dirname(__file__), 'trained_models', 'binaries')
+
+    # Define path to trained models for upward and downward movement
+    predictor_config = {
+        'model_binaries_path': model_binaries_path,
+        'model_up_name': 'model_up_test.pth',
+        'model_down_name': 'model_down_test.pth',
+    }
+
+    date = datetime.datetime.fromisoformat(date)
+
+    predictor = Predictor(predictor_config)
+    predictor.predict(lat, lon, alt, alt0, mass, date, burst_altitude)
