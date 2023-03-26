@@ -128,9 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Ignore datas, they can be downloaded
-/data/balloon/*
-
 # Ignore runs
 /runs/*
 

@@ -83,7 +83,7 @@ if __name__ == '__main__':
     alt = 272 # metes
     alt0 = 50 # meters
     mass = 4 # kg (dont change that)
-    date = '2023-03-16 10:46:47'
+    date = '2023-03-26 10:46:47'
 
     """
     Selecting type of balloon from:
@@ -119,8 +119,4 @@ if __name__ == '__main__':
 
     predictor = Predictor(predictor_config)
     predictor.predict(lat, lon, alt, alt0, mass, date, burst_altitude)
-
-    flight_example_path = os.path.join(os.path.dirname(__file__), 'data', 'balloon', 'example_flight_lat_lon.csv')
-
-    predictor.add_flight_to_map(flight_example_path)
     predictor.view.show_map()
