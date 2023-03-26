@@ -19,7 +19,7 @@ Balloons data are downloaded from [sondehub](https://sondehub.org) and forecast 
 
 ## Predictor
 
-To use flight predictor you have to set balloon parameters at the end of predictor.py file. If there isnt forecast data at data/balloon directory script will automaticaly download it. You can limit number of predictions by setting `limit_prediction` variable and passing it to the predict function. To select trained model you have to fill path in `predictor_config` variable.
+To use flight predictor you have to set balloon parameters at the end of predictor.py file. If there isnt forecast data at data/balloon directory script will automaticaly download it. **ECMWF doesn't provide datas older than 2 days.** You can limit number of predictions by setting `limit_prediction` variable and passing it to the predict function. To select trained model you have to fill path in `predictor_config` variable.
 
 ## Training
 
