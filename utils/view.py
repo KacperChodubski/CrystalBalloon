@@ -21,7 +21,7 @@ class ViewMap:
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
 
-        self.ax.set_extent([13, 25, 48, 56])
+        self.ax.set_extent([10, 30, 42, 58])
         self.ax.add_image(request, 6, interpolation='spline36')
         self.ax.add_feature(cfeature.OCEAN)
         self.ax.add_feature(cfeature.BORDERS)
@@ -32,8 +32,6 @@ class ViewMap:
             self.real_points_lats.append(lat)
             self.real_points_lons.append(lon)
             for i in range(len(self.real_points_lons) - 1):
-
-                #scipy.interpolate.interp1d(self.real_points_lats, self.real_points_lons, kind='cubic')
 
                 to_lon = self.real_points_lons[i+1]
                 to_lat = self.real_points_lats[i+1]
@@ -62,7 +60,10 @@ class ViewMap:
 
 if __name__ == '__main__':
     viewMap = ViewMap()
-    viewMap.add_point(57, 14, True)
-    viewMap.add_point(57, 13, True)
-    viewMap.add_point(56, 13, True)
+
+    viewMap.add_point(47.48565, 12.54207, True)
+    viewMap.add_point(47.47721, 12.54698, True)
+    viewMap.add_point(47.46881, 12.55171, True)
+    viewMap.add_point(47.46034, 12.55613, True)
+    viewMap.add_point(47.45204, 12.56037, True)
     viewMap.show_map()

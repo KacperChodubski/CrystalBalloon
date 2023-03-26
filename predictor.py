@@ -1,3 +1,4 @@
+from tkinter.tix import Tree
 from model.model import PredictionModel
 from data.ecmwf_data_collector import ECMWF_data_collector
 from utils.view import ViewMap
@@ -5,6 +6,7 @@ import datetime
 import torch
 import os
 import utils.utils as ut
+import csv
 
 
 class Predictor:
@@ -24,9 +26,6 @@ class Predictor:
         state_dict_down = training_state_down["state_dict"]
         self.model_down.load_state_dict(state_dict_down, strict=True)
         self.model_down.eval()
-
-        print(state_dict_up)
-        print(state_dict_down)
 
         self.view = ViewMap()
         self.ecmwf = ECMWF_data_collector()
@@ -65,9 +64,14 @@ class Predictor:
                 alt_pred += prediciton['alt'].item() * 1000
                 time_pred += delta_time
                 print(f'lat:{lat_pred}, lon:{lon_pred}, alt:{alt_pred}')
-
-            
-            self.view.show_map()
+    
+    def add_flight_to_map (self, path):
+        with open(path, newline='') as flight_file:
+            reader = csv.reader(flight_file, delimiter=',')
+            for row in reader:
+                lat = row[0]
+                lon = row[1]
+                self.view.add_point(float(lat), float(lon), True)
 
 
 if __name__ == '__main__':
@@ -75,11 +79,11 @@ if __name__ == '__main__':
     # Setting parameters of flight
 
     predictions_limit = 40 # limit of made precitions
-    lat, lon = 53.5965, 19.5513
+    lat, lon = 48.2455,11.54762
     alt = 272 # metes
     alt0 = 50 # meters
     mass = 4 # kg (dont change that)
-    date = '2023-03-25 12:00:00'
+    date = '2023-03-16 10:46:47'
 
     """
     Selecting type of balloon from:
@@ -100,7 +104,7 @@ if __name__ == '__main__':
     ascent_rate = 5 # m/s
 
     burst_altitude = ut.calculate_burst_altitude(balloon_mass, payload, ascent_rate)
-    burst_altitude = 1000
+    burst_altitude = 21750
 
     model_binaries_path = os.path.join(os.path.dirname(__file__), 'trained_models', 'binaries')
 
@@ -115,3 +119,8 @@ if __name__ == '__main__':
 
     predictor = Predictor(predictor_config)
     predictor.predict(lat, lon, alt, alt0, mass, date, burst_altitude)
+
+    flight_example_path = os.path.join(os.path.dirname(__file__), 'data', 'balloon', 'example_flight_lat_lon.csv')
+
+    predictor.add_flight_to_map(flight_example_path)
+    predictor.view.show_map()

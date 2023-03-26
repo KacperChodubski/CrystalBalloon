@@ -90,6 +90,7 @@ def train(training_config):
     model_name = f'model_{training_config["model_name"]}.pth'
     torch.save(training_state, os.path.join(training_config['model_binaries_path'], model_name))
 
+
 if __name__ == "__main__":
     dataset_up_path = os.path.join(os.path.dirname(__file__), 'data', 'balloon', 'datasets_up.csv')
     dataset_down_path = os.path.join(os.path.dirname(__file__), 'data', 'balloon', 'datasets_down.csv')

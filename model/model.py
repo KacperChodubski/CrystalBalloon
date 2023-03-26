@@ -13,19 +13,16 @@ class PredictionModel(nn.Module):
         # lat layers
         self.l1_1 = nn.Linear(input_size, hidden_size)
         self.l1_2 = nn.Linear(hidden_size, hidden_size)
-        self.l1_3 = nn.Linear(hidden_size, hidden_size)
         self.l1_4 = nn.Linear(hidden_size, 1)
 
         # lon layers
         self.l2_1 = nn.Linear(input_size, hidden_size)
         self.l2_2 = nn.Linear(hidden_size, hidden_size)
-        self.l2_3 = nn.Linear(hidden_size, hidden_size)
         self.l2_4 = nn.Linear(hidden_size, 1)
 
         # alt layers
         self.l3_1 = nn.Linear(input_size, hidden_size)
         self.l3_2 = nn.Linear(hidden_size, hidden_size)
-        self.l3_3 = nn.Linear(hidden_size, hidden_size)
         self.l3_4 = nn.Linear(hidden_size, 1)
 
 
@@ -35,17 +32,14 @@ class PredictionModel(nn.Module):
 
         out1 = self.l1_1(x)
         out1 = self.l1_2(out1)
-        #out1 = self.l1_3(out1)
         out1 = self.l1_4(out1)
 
         out2 = self.l2_1(x)
         out2 = self.l2_2(out2)
-        #out2 = self.l2_3(out2)
         out2 = self.l2_4(out2)
 
         out3 = self.l3_1(x)
         out3 = self.l3_2(out3)
-        #out3 = self.l3_3(out3)
         out3 = self.l3_4(out3)
 
         return {'lat': out1, 'lon': out2, 'alt': out3}
