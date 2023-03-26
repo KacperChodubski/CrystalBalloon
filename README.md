@@ -5,9 +5,9 @@ Crystal balloon is a high altitude balloon flight predictor based on neural netw
 Balloons data are downloaded from [sondehub](https://sondehub.org) and forecast data are from open data at [ECMWF](https://www.ecmwf.int)
 
 ![2023-03-25 prediction of h1200 baloon](example_prediction.png)
-<span style="color:#055ae3"> Predicted flight </span>
+<span style="color:#055ae3"> Predicted flight - blue </span>
 
-<span style="color:#c7282d"> Real flight </span>
+<span style="color:#c7282d"> Real flight - red </span>
 
 # Setup 
 
